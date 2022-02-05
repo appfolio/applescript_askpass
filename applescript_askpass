@@ -1,0 +1,32 @@
+#!/usr/bin/env osascript
+
+launch application "System Events"
+set defaultIcon to POSIX file "/System/Applications/Utilities/Keychain Access.app/Contents/Resources/AppIcon.icns"
+set defaultPromptTitle to "Password"
+set defaultPrompt to "Enter your password to allow this process to make changes."
+
+set promptText to defaultPrompt
+set inputPassword to ""
+set validPasswordEntered to false
+
+do shell script "sudo -K"
+repeat while not validPasswordEntered
+  try
+    tell application "System Events"
+      display dialog promptText with hidden answer default answer inputPassword buttons {"OK"} default button 1 with title defaultPromptTitle with icon defaultIcon
+      set the inputPassword to the text returned of the result
+
+      try
+        do shell script "(echo " & quoted form of inputPassword & " | sudo -S true)"
+        set validPasswordEntered to true
+      on error
+        set promptText to defaultPrompt & "\n\n⚠️ Incorrect password entered."
+      end try
+    end tell
+  on error e
+    tell application "System Events" to quit
+    error e
+  end try
+end repeat
+
+return inputPassword
